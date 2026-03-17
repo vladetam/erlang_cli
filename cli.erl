@@ -50,7 +50,6 @@ handle_input(_, Shipments) ->
      io:format("Invalid selection.~n"),
             loop(Shipments).
 
-
 menu() ->
     io:format("~n1. View All | 2. Filter | 3. Statistics | 4. Dispatch | 5. Exit~n").
 
@@ -64,19 +63,24 @@ view_all([Head | Tail]) ->
 print_shipment({shipment,ID,Weight,Destination,Status}) ->
     io:format("ID: ~p | Weight: ~p | Dest: ~s | Status: ~p~n",[ID,Weight,Destination,Status]).
 
+is_letter(Character) ->
+    Character >= $a andalso Character =< $z.
+
 filter(Shipments) ->
     Input = io:get_line("Destination > "),
     TrimInput = string:trim(Input),
+    LowerInput = string:lowercase(TrimInput),
 
-    case TrimInput of
+    case LowerInput of
         "" ->
             io:format("Invalid input. Please enter a destination.~n");
 
         _ ->
-            case string:to_integer(TrimInput) of
-                {error, _} ->
-                    run_filter(Shipments, TrimInput);
-                {_, _} ->
+            case lists:all(fun(Character) -> is_letter(Character) end, LowerInput) of
+                true ->
+                    run_filter(Shipments, LowerInput);
+
+                false ->
                     io:format("Invalid input. Destination must contain only letters.~n")
             end
     end.
