@@ -42,7 +42,12 @@ handle_input("4", Shipments) ->
         io:format("From Pending to In Transit~n"),
             loop(New);
 
-handle_input("5",_) ->
+handle_input("5", Shipments) ->
+    NewShipments=add_shipment(Shipments),
+    io:format("Adding New Shipment...~n"),
+     loop(NewShipments);
+    
+handle_input("6",_) ->
     io:format("Exiting Terminal...~n"),
     ok;
 
@@ -51,7 +56,7 @@ handle_input(_, Shipments) ->
             loop(Shipments).
 
 menu() ->
-    io:format("~n1. View All | 2. Filter | 3. Statistics | 4. Dispatch | 5. Exit~n").
+    io:format("~n1. View All | 2. Filter | 3. Statistics | 4. Dispatch | 5. Add Shipment | 6. Exit~n").
 
 view_all([]) ->
     ok;
@@ -146,3 +151,63 @@ dispatch(Shipments) ->
                 Shipment
         end,
     Shipments).
+
+%%%Add new shipment
+
+add_shipment(Shipments) ->
+    Weight = get_valid_weight(),
+    Destination = get_valid_destination(),
+    ID = get_next_id(Shipments),
+    NewShipment = {shipment, ID, Weight, Destination, pending},
+
+    NewList = add_to_end(Shipments, NewShipment),
+
+    io:format("Shipment added with ID: ~p~n", [ID]),
+
+    NewList.
+
+get_valid_weight() ->
+    Input = string:trim(io:get_line("Weight > ")),
+
+    case string:to_integer(Input) of
+        {Weight, ""} when Weight > 0 ->
+            Weight;
+
+        _ ->
+            io:format("Invalid weight. Try again.~n"),
+            get_valid_weight()
+    end.
+
+get_valid_destination() ->
+    Input = string:lowercase(string:trim(io:get_line("Destination > "))),
+
+    case Input of
+        "" ->
+            io:format("Invalid destination. Try again.~n"),
+            get_valid_destination();
+
+        _ ->
+            case lists:all(fun is_letter/1, Input) of
+                true ->
+                    Input;
+
+                false ->
+                    io:format("Only letters allowed.~n"),
+                    get_valid_destination()
+            end
+    end.
+
+get_next_id(Shipments) ->
+    lists:foldl(
+        fun({shipment, Id, _, _, _}, Max) ->
+            erlang:max(Id, Max)
+        end,
+        0,
+        Shipments
+    ) + 1.
+
+add_to_end([], Elem) ->
+    [Elem];
+
+add_to_end([H | T], Elem) ->
+    [H | add_to_end(T, Elem)].
